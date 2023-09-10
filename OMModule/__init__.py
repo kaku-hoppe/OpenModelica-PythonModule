@@ -1,6 +1,7 @@
 from OMPython import OMCSessionZMQ
 
 import os
+import tempfile
 
 
 class OMModule(object):
@@ -20,18 +21,9 @@ class OMModule(object):
         self.inputlist = {}
         self.outputlist = {}
         self.contilist = {}
-        self.simulateOptions = {}
+        self.simOptions = {}
         self.overridevariables = {}
         self.simoptionsoverride = {}
-        # self.linearOptions = {'startTime': 0.0, 'stopTime': 1.0, 'numberOfIntervals': 500, 'stepSize': 0.002,
-        #                       'tolerance': 1e-8}
-        # self.optimizeOptions = {'startTime': 0.0, 'stopTime': 1.0, 'numberOfIntervals': 500, 'stepSize': 0.002,
-        #                         'tolerance': 1e-8}
-        # self.linearquantitiesList = []  # linearization  quantity list
-        # self.linearparameters = {}
-        # self.linearinputs = []  # linearization input list
-        # self.linearoutputs = []  # linearization output list
-        # self.linearstates = []  # linearization  states list
         self.tempdir = ""
 
     def __sendCommand(self, api, string):
@@ -46,6 +38,9 @@ class OMModule(object):
         # 後ろの文字を返してくれる。
         self.modelName = "test"
         return True
+
+    def __paraFromXML(self):
+        return
 
     def loadFile(self, mainfile=None, submodels=None):
         if mainfile is None:
@@ -63,10 +58,23 @@ class OMModule(object):
             self.subModels = submodels
             print("=======Load subModel======")
             for _filepath in self.subModels:
-                self.__sendCommand("loadFile", _filepath + ", ")
+                self.__sendCommand("loadFile", "\"" + _filepath + ", ")
         print("=====End LoadFile======")
         return True
 
+    def getConti(self):
+        return True
 
+    def getPara(self):
+        return True
 
+    def getQuant(self):
+        return True
 
+    def buildModel(self):
+        self.__sendCommand("buildModel",  + ", ")
+        return True
+
+    def simulate(self):
+        self.tempdir = tempfile.mktemp()
+        return True
