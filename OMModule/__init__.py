@@ -4,23 +4,17 @@ import os
 
 
 class OMModule(object):
-    def __init__(self, filedir=None, lmodel=[], useCorba=False, commandLineOptions=None):
+    def __init__(self):
         """
         Basic module for Python.
-        :param filedir : ~~.mo
-        :param lmodel :
-        :param useCorba:
-        :param commandLineOptions:
         """
-
-        if filedir is None:
-            print("File does not exist")
-            return
 
         self.getSession = OMCSessionZMQ()
 
-        self.fileDir = filedir
-        self.fileName = ""
+        self.mainFile = ""
+        self.modelName = ""
+        self.subModels = []
+
         self.quantitiesList = []
         self.paralist = {}
         self.inputlist = {}
@@ -40,7 +34,6 @@ class OMModule(object):
         # self.linearstates = []  # linearization  states list
         self.tempdir = ""
 
-
     def __sendCommand(self, api, string):
         self.getSession.sendExpression(api + "(" + string + ")")
         result = self.getSession.sendExpression("getErrorString()")
@@ -48,11 +41,32 @@ class OMModule(object):
             result = True
         return result
 
-    def __getModelName(self, fileName):
+    def __getModelName(self):
         # メインファイルの一行目を取得し、スペースで分割。
         # 後ろの文字を返してくれる。
-        print("")
+        self.modelName = "test"
+        return True
 
-    def loadFile(self, filedir):
-        print("=====startLoadFile======")
-        self.__sendCommand("loadFile", filedir + ", ")
+    def loadFile(self, mainfile=None, submodels=None):
+        if mainfile is None:
+            print("File does not exist")
+            return False
+        self.mainFile = mainfile
+        self.__getModelName()
+
+        print("=====Start LoadFile======")
+        print("======Load main file======")
+        print("=======1. " + self.mainFile)
+        self.__sendCommand("loadFile", "\"" + self.mainFile + "\", \"" + self.modelName + "\"")
+
+        if submodels is not None:
+            self.subModels = submodels
+            print("=======Load subModel======")
+            for _filepath in self.subModels:
+                self.__sendCommand("loadFile", _filepath + ", ")
+        print("=====End LoadFile======")
+        return True
+
+
+
+
