@@ -1,7 +1,9 @@
-from OMPython import OMCSessionZMQ
-
+import subprocess
 import os
 import tempfile
+import xml.etree.ElementTree as XMLtree
+
+from OMPython import OMCSessionZMQ
 
 
 class OMModule(object):
@@ -15,7 +17,7 @@ class OMModule(object):
         self.mainFile = ""
         self.modelName = ""
         self.subModels = []
-
+        self.XMLFilePath = ""
         self.quantitiesList = []
         self.paralist = {}
         self.inputlist = {}
@@ -27,11 +29,11 @@ class OMModule(object):
         self.tempdir = ""
 
     def __sendCommand(self, api, string):
-        self.getSession.sendExpression(api + "(\"" + string + "\")")
-        result = self.getSession.sendExpression("getErrorString()")
-        if result is not None:
-            return result
-        return True
+        result = self.getSession.sendExpression(api + "(\"" + string + "\")")
+        Error_message = self.getSession.sendExpression("getErrorString()")
+        if Error_message is not None:
+            return Error_message
+        return result
 
     def __getModelName(self):
         # メインファイルの一行目を取得し、スペースで分割。
@@ -39,16 +41,13 @@ class OMModule(object):
         self.modelName = "test"
         return True
 
-    def __paraFromXML(self):
-        return
-
     def loadFile(self, mainfile=None, submodels=None):
         if mainfile is None:
             print("File does not exist")
             return False
         self.mainFile = mainfile
 
-        print("=====Start LoadFile======")
+        print("=====Start LoadFile=======")
         print("======Load main file======")
         print("=======1. " + self.mainFile)
         self.__sendCommand("loadFile",  self.mainFile)
@@ -61,13 +60,23 @@ class OMModule(object):
         print("=====End LoadFile======")
         return True
 
+    def __getValueFromXML(self):
+        paraTree = XMLtree.ElementTree(file=self.XMLFilePath)
+        paraRoot = paraTree.getroot()
+        for defExp in paraRoot.iter("DefaultExperiment"):
+            self.simOptions["startTime"] = defExp.get("startTime")
+        return
+
     def buildModel(self):
         self.__getModelName()
         self.tempdir = tempfile.mktemp()
-        self.__sendCommand("buildModel", self.modelName)
-        return True
+        xlmfiles = self.__sendCommand("buildModel", self.modelName)
+        # check the error message
+        if "error" in xlmfiles:
+            return xlmfiles
 
-    def getXMLpara(self):
+        self.XMLFilePath = os.path.join(os.path.dirname(xlmfiles[0]), xlmfiles[1]).replace("\\", "/")
+        self.__getValueFromXML()
         return True
 
     def getConti(self):
@@ -83,10 +92,8 @@ class OMModule(object):
         # sample data
         cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
 
-        omhome = os.path.join(os.environ.get("OPENMODELICAHOME"))
-        dllPath = os.path.join(omhome, "bin").replace("\\", "/") + os.pathsep + os.path.join(omhome, "lib/omc").replace(
-        "\\", "/") + os.pathsep + os.path.join(omhome, "lib/omc/cpp").replace("\\", "/") + os.pathsep + os.path.join(
-        omhome, "lib/omc/omsicpp").replace("\\", "/")
+        OMHome = os.path.join(os.environ.get("OPENMODELICAHOME"))
+        dllPath = os.path.join(OMHome, "bin").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/cpp").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/omsicpp").replace("\\", "/")
         my_env = os.environ.copy()
         my_env["PATH"] = dllPath + os.pathsep + my_env["PATH"]
         p = subprocess.Popen(cmd, env=my_env)
