@@ -27,11 +27,11 @@ class OMModule(object):
         self.tempdir = ""
 
     def __sendCommand(self, api, string):
-        self.getSession.sendExpression(api + "(" + string + ")")
+        self.getSession.sendExpression(api + "(\"" + string + "\")")
         result = self.getSession.sendExpression("getErrorString()")
-        if result is None:
-            result = True
-        return result
+        if result is not None:
+            return result
+        return True
 
     def __getModelName(self):
         # メインファイルの一行目を取得し、スペースで分割。
@@ -57,8 +57,17 @@ class OMModule(object):
             self.subModels = submodels
             print("=======Load subModel======")
             for _filepath in self.subModels:
-                self.__sendCommand("loadFile", "\"" + _filepath + "\"")
+                self.__sendCommand("loadFile", _filepath)
         print("=====End LoadFile======")
+        return True
+
+    def buildModel(self):
+        self.__getModelName()
+        self.tempdir = tempfile.mktemp()
+        self.__sendCommand("buildModel", self.modelName)
+        return True
+
+    def getXMLpara(self):
         return True
 
     def getConti(self):
@@ -70,11 +79,5 @@ class OMModule(object):
     def getQuant(self):
         return True
 
-    def buildModel(self):
-        self.__getModelName()
-        self.__sendCommand("buildModel", self.modelName)
-        return True
-
     def simulate(self):
-        self.tempdir = tempfile.mktemp()
         return True
