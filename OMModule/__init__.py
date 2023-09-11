@@ -17,7 +17,7 @@ class OMModule(object):
         self.mainFile = ""
         self.modelName = ""
         self.subModels = []
-        self.XMLFilePath = ""
+        self.xmlFilePath = ""
         self.quantitiesList = []
         self.paralist = {}
         self.inputlist = {}
@@ -61,10 +61,14 @@ class OMModule(object):
         return True
 
     def __getValueFromXML(self):
-        paraTree = XMLtree.ElementTree(file=self.XMLFilePath)
+        paraTree = XMLtree.ElementTree(file=self.xmlFilePath)
         paraRoot = paraTree.getroot()
         for defExp in paraRoot.iter("DefaultExperiment"):
             self.simOptions["startTime"] = defExp.get("startTime")
+            self.simOptions["stopTime"] = defExp.get("stopTime")
+            self.simOptions["stepSize"] = defExp.get("stepSize")
+            self.simOptions["outputFormat"] = defExp.get("outputFormat")
+            self.simOptions["variableFilter"] = defExp.get("variableFilter")
         return
 
     def buildModel(self):
