@@ -51,7 +51,7 @@ class OMModule(object):
         print("=====Start LoadFile======")
         print("======Load main file======")
         print("=======1. " + self.mainFile)
-        self.__sendCommand("loadFile", "\"" + self.mainFile + "\"")
+        self.__sendCommand("loadFile",  self.mainFile)
 
         if submodels is not None:
             self.subModels = submodels
@@ -80,4 +80,21 @@ class OMModule(object):
         return True
 
     def simulate(self):
+        # sample data
+        cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
+
+        omhome = os.path.join(os.environ.get("OPENMODELICAHOME"))
+        dllPath = os.path.join(omhome, "bin").replace("\\", "/") + os.pathsep + os.path.join(omhome, "lib/omc").replace(
+        "\\", "/") + os.pathsep + os.path.join(omhome, "lib/omc/cpp").replace("\\", "/") + os.pathsep + os.path.join(
+        omhome, "lib/omc/omsicpp").replace("\\", "/")
+        my_env = os.environ.copy()
+        my_env["PATH"] = dllPath + os.pathsep + my_env["PATH"]
+        p = subprocess.Popen(cmd, env=my_env)
+        p.wait()
+        p.terminate()
+
+        # result_simulation = omc.sendExpression("simulate(BouncingBall, stopTime=20.0, numberOfIntervals = 200, outputFormat=\"csv\")")
+        # print("=====result_simulation====")
+        # print(result_simulation)
+        print("\n")
         return True
