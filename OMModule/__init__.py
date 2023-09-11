@@ -47,18 +47,17 @@ class OMModule(object):
             print("File does not exist")
             return False
         self.mainFile = mainfile
-        self.__getModelName()
 
         print("=====Start LoadFile======")
         print("======Load main file======")
         print("=======1. " + self.mainFile)
-        self.__sendCommand("loadFile", "\"" + self.mainFile + "\", \"" + self.modelName + "\"")
+        self.__sendCommand("loadFile", "\"" + self.mainFile + "\"")
 
         if submodels is not None:
             self.subModels = submodels
             print("=======Load subModel======")
             for _filepath in self.subModels:
-                self.__sendCommand("loadFile", "\"" + _filepath + ", ")
+                self.__sendCommand("loadFile", "\"" + _filepath + "\"")
         print("=====End LoadFile======")
         return True
 
@@ -72,7 +71,8 @@ class OMModule(object):
         return True
 
     def buildModel(self):
-        self.__sendCommand("buildModel",  + ", ")
+        self.__getModelName()
+        self.__sendCommand("buildModel", self.modelName)
         return True
 
     def simulate(self):
