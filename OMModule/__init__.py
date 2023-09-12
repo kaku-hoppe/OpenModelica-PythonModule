@@ -50,7 +50,7 @@ class OMModule(object):
         print("=====Start LoadFile=======")
         print("======Load main file======")
         print("=======1. " + self.mainFile)
-        self.__sendCommand("loadFile",  self.mainFile)
+        self.__sendCommand("loadFile", self.mainFile)
 
         if submodels is not None:
             self.subModels = submodels
@@ -64,11 +64,22 @@ class OMModule(object):
         paraTree = XMLtree.ElementTree(file=self.xmlFilePath)
         paraRoot = paraTree.getroot()
         for defExp in paraRoot.iter("DefaultExperiment"):
-            self.simOptions["startTime"] = defExp.get("startTime")
-            self.simOptions["stopTime"] = defExp.get("stopTime")
-            self.simOptions["stepSize"] = defExp.get("stepSize")
-            self.simOptions["outputFormat"] = defExp.get("outputFormat")
-            self.simOptions["variableFilter"] = defExp.get("variableFilter")
+            self.simOptions["startTime"] = defExp.attrib["startTime"]
+            self.simOptions["stopTime"] = defExp.attrib["stopTime"]
+            self.simOptions["stepSize"] = defExp.attrib["stepSize"]
+            self.simOptions["outputFormat"] = defExp.attrib["outputFormat"]
+            self.simOptions["variableFilter"] = defExp.attrib["variableFilter"]
+
+        for Models in paraRoot.iter("ModelVariables"):
+            for scalar in Models.iter("ScalarVariable"):
+                _variability = scalar.attrib["variability"]
+                _name = scalar.attrib["name"]
+                if _variability == "parameter" or _variability == "continuous":
+                    for _reals in scalar.iter("Real"):
+                        _reals_atrib = _reals.attrib
+                        if "start" in _reals_atrib.keys():
+                            self.paralist[_name] = _reals_atrib['start']
+
         return
 
     def buildModel(self):
@@ -97,7 +108,10 @@ class OMModule(object):
         cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
 
         OMHome = os.path.join(os.environ.get("OPENMODELICAHOME"))
-        dllPath = os.path.join(OMHome, "bin").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/cpp").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/omsicpp").replace("\\", "/")
+        dllPath = os.path.join(OMHome, "bin").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc").replace(
+            "\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/cpp").replace("\\",
+                                                                                  "/") + os.pathsep + os.path.join(
+            OMHome, "lib/omc/omsicpp").replace("\\", "/")
         my_env = os.environ.copy()
         my_env["PATH"] = dllPath + os.pathsep + my_env["PATH"]
         p = subprocess.Popen(cmd, env=my_env)
