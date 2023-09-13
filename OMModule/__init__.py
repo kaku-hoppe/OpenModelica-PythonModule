@@ -7,18 +7,19 @@ from OMPython import OMCSessionZMQ
 
 
 class OMModule(object):
-    def __init__(self):
+    def __init__(self, outputDir=None):
         """
         Basic module for Python.
         """
 
         self.getSession = OMCSessionZMQ()
+        self.baseDir = outputDir
 
         self.mainFile = ""
         self.modelName = ""
         self.subModels = []
         self.xmlFilePath = ""
-        self.quantitiesList = []
+        self.discretelist = {}
         self.paralist = {}
         self.inputlist = {}
         self.outputlist = {}
@@ -70,40 +71,53 @@ class OMModule(object):
             self.simOptions["outputFormat"] = defExp.attrib["outputFormat"]
             self.simOptions["variableFilter"] = defExp.attrib["variableFilter"]
 
-        for Models in paraRoot.iter("ModelVariables"):
-            for scalar in Models.iter("ScalarVariable"):
-                _variability = scalar.attrib["variability"]
-                _name = scalar.attrib["name"]
-                if _variability == "parameter" or _variability == "continuous":
-                    for _reals in scalar.iter("Real"):
-                        _reals_atrib = _reals.attrib
-                        if "start" in _reals_atrib.keys():
-                            self.paralist[_name] = _reals_atrib['start']
+        for scalar in paraRoot.iter("ScalarVariable"):
+            _variability = scalar.attrib["variability"]
+            _name = scalar.attrib["name"]
+            for _reals in scalar.iter("Real"):
+                _reals_atrib = _reals.attrib
+                if "start" in _reals_atrib.keys():
+                    if _variability == "parameter":
+                        self.paralist[_name] = _reals_atrib['start']
+                    elif _variability == "continuous":
+                        self.contilist[_name] = _reals_atrib['start']
+                    elif _variability == "discrete":
+                        self.discretelist[_name] = _reals_atrib['start']
+        # must check other parameter
 
-        return
+        return True
 
     def buildModel(self):
         self.__getModelName()
         self.tempdir = tempfile.mktemp()
-        xlmfiles = self.__sendCommand("buildModel", self.modelName)
+        build_result = self.__sendCommand("buildModel", self.modelName)
         # check the error message
-        if "error" in xlmfiles:
-            return xlmfiles
-
-        self.XMLFilePath = os.path.join(os.path.dirname(xlmfiles[0]), xlmfiles[1]).replace("\\", "/")
+        if "error" in build_result:
+            return build_result
+        self.xmlFilePath = os.path.join(os.path.dirname(build_result[0]), build_result[1]).replace("\\", "/")
         self.__getValueFromXML()
         return True
 
     def getConti(self):
-        return True
+        return self.contilist
 
     def getPara(self):
-        return True
+        return self.paralist
 
-    def getQuant(self):
-        return True
+    def getDiscrete(self):
+        return self.discretelist
 
     def simulate(self):
+        print("=====Start Simulation==================")
+        print("======Write parameter in text file=====")
+        f = open(self.modelName + "_SimParameter.txt", "w")
+        # startTime, stopTime, stepSize and so on...
+
+        for _parameter in self.contilist:
+            f.write(_parameter[0] + "=" + _parameter[1] + "\n")
+        f.close()
+        print("======End of writing parameter=========")
+
         # sample data
         cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
 
@@ -114,12 +128,10 @@ class OMModule(object):
             OMHome, "lib/omc/omsicpp").replace("\\", "/")
         my_env = os.environ.copy()
         my_env["PATH"] = dllPath + os.pathsep + my_env["PATH"]
-        p = subprocess.Popen(cmd, env=my_env)
-        p.wait()
-        p.terminate()
+        p = subprocess.run(cmd, env=my_env)
 
         # result_simulation = omc.sendExpression("simulate(BouncingBall, stopTime=20.0, numberOfIntervals = 200, outputFormat=\"csv\")")
         # print("=====result_simulation====")
         # print(result_simulation)
-        print("\n")
+        print(p)
         return True
