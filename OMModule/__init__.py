@@ -89,7 +89,8 @@ class OMModule(object):
 
     def buildModel(self):
         self.__getModelName()
-        self.tempdir = tempfile.mktemp()
+        if self.tempdir is None:
+            self.tempdir = tempfile.mkdtemp()
         build_result = self.__sendCommand("buildModel", self.modelName)
         # check the error message
         if "error" in build_result:
@@ -110,8 +111,13 @@ class OMModule(object):
     def simulate(self):
         print("=====Start Simulation==================")
         print("======Write parameter in text file=====")
-        f = open(self.modelName + "_SimParameter.txt", "w")
+        _overrideFile_Path = self.modelName + "_SimParameter.txt"
+        _cmd_override = " -overrideFile=" + _overrideFile_Path
+        f = open(_overrideFile_Path, "w")
         # startTime, stopTime, stepSize and so on...
+
+        for _simOption in self.simOptions:
+            f.write(_simOption[0] + "=" + _simOption[1] + "\n")
 
         for _parameter in self.contilist:
             f.write(_parameter[0] + "=" + _parameter[1] + "\n")
@@ -119,13 +125,11 @@ class OMModule(object):
         print("======End of writing parameter=========")
 
         # sample data
-        cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
+        # cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
+        cmd = "C:/Users/test/デスクトップ/OMPython_testScript/" + self.modelName + ".exe" + _cmd_override
 
         OMHome = os.path.join(os.environ.get("OPENMODELICAHOME"))
-        dllPath = os.path.join(OMHome, "bin").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc").replace(
-            "\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/cpp").replace("\\",
-                                                                                  "/") + os.pathsep + os.path.join(
-            OMHome, "lib/omc/omsicpp").replace("\\", "/")
+        dllPath = os.path.join(OMHome, "bin").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/cpp").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/omsicpp").replace("\\", "/")
         my_env = os.environ.copy()
         my_env["PATH"] = dllPath + os.pathsep + my_env["PATH"]
         p = subprocess.run(cmd, env=my_env)
@@ -135,3 +139,7 @@ class OMModule(object):
         # print(result_simulation)
         print(p)
         return True
+
+
+if __name__ == '__main__':
+    print("Hello World")
