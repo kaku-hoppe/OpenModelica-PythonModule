@@ -27,7 +27,6 @@ class OMModule(object):
         self.simOptions = {}
         self.overridevariables = {}
         self.simoptionsoverride = {}
-        self.tempdir = ""
 
     def __sendCommand(self, api, string):
         result = self.getSession.sendExpression(api + "(\"" + string + "\")")
@@ -39,7 +38,10 @@ class OMModule(object):
     def __getModelName(self):
         # メインファイルの一行目を取得し、スペースで分割。
         # 後ろの文字を返してくれる。
-        self.modelName = "test"
+        with open('./test.txt') as f:
+            for line in f:
+                if line != "":
+                    self.modelName = line.split()[1]
         return True
 
     def loadFile(self, mainfile=None, submodels=None):
@@ -53,11 +55,14 @@ class OMModule(object):
         print("=======1. " + self.mainFile)
         self.__sendCommand("loadFile", self.mainFile)
 
-        if submodels is not None:
-            self.subModels = submodels
-            print("=======Load subModel======")
-            for _filepath in self.subModels:
-                self.__sendCommand("loadFile", _filepath)
+        if submodels is None:
+            print("=====End LoadFile======")
+            return False
+
+        self.subModels = submodels
+        print("=======Load subModel======")
+        for _filepath in self.subModels:
+            self.__sendCommand("loadFile", _filepath)
         print("=====End LoadFile======")
         return True
 
@@ -89,8 +94,13 @@ class OMModule(object):
 
     def buildModel(self):
         self.__getModelName()
-        if self.tempdir is None:
-            self.tempdir = tempfile.mkdtemp()
+        if self.baseDir is None:
+            self.baseDir = tempfile.mkdtemp()
+        change_dir = self.__sendCommand("CD", self.baseDir)
+        if not change_dir:
+            print("Folder does not exist.")
+            return False
+
         build_result = self.__sendCommand("buildModel", self.modelName)
         # check the error message
         if "error" in build_result:
@@ -142,4 +152,10 @@ class OMModule(object):
 
 
 if __name__ == '__main__':
+    output_dir = input("write output directory : ")
+    sim_dir = input("write simfile directory : ")
+    OMM = OMModule(output_dir)
+    OMM.loadFile(sim_dir)
+    OMM.buildModel()
+    OMM.simulate()
     print("Hello World")
