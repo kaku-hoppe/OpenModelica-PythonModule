@@ -29,20 +29,20 @@ class OMModule(object):
         self.simoptionsoverride = {}
 
     def __sendCommand(self, api, string):
-        result = self.getSession.sendExpression(api + "(\"" + string + "\")")
-        Error_message = self.getSession.sendExpression("getErrorString()")
-        if Error_message is not None:
-            return Error_message
+        api_string = api + "(" + string + ")"
+        result = self.getSession.sendExpression(api_string)
+        print("api: "+api_string)
+        print("result: "+str(result))
         return result
 
     def __getModelName(self):
-        # メインファイルの一行目を取得し、スペースで分割。
-        # 後ろの文字を返してくれる。
-        with open('./test.txt') as f:
+        with open(self.mainFile) as f:
             for line in f:
                 if line != "":
-                    self.modelName = line.split()[1]
-        return True
+                    mName = line.split()
+                    self.modelName = mName[1]
+                    return True
+        return False
 
     def loadFile(self, mainfile=None, submodels=None):
         if mainfile is None:
@@ -53,7 +53,7 @@ class OMModule(object):
         print("=====Start LoadFile=======")
         print("======Load main file======")
         print("=======1. " + self.mainFile)
-        self.__sendCommand("loadFile", self.mainFile)
+        self.__sendCommand("loadFile", "\"" + self.mainFile + "\"")
 
         if submodels is None:
             print("=====End LoadFile======")
@@ -62,8 +62,8 @@ class OMModule(object):
         self.subModels = submodels
         print("=======Load subModel======")
         for _filepath in self.subModels:
-            self.__sendCommand("loadFile", _filepath)
-        print("=====End LoadFile======")
+            self.__sendCommand("loadFile", "\"" + _filepath + "\"")
+        print("=====End LoadFile=========")
         return True
 
     def __getValueFromXML(self):
@@ -96,12 +96,16 @@ class OMModule(object):
         self.__getModelName()
         if self.baseDir is None:
             self.baseDir = tempfile.mkdtemp()
-        change_dir = self.__sendCommand("CD", self.baseDir)
-        if not change_dir:
-            print("Folder does not exist.")
-            return False
+        change_dir = self.__sendCommand("cd", "\"" + self.baseDir + "\"") # self.baseDir
+        print("cd result: "+str(change_dir))
+        # if not change_dir:
+        #     print("Folder does not exist.")
+        #     return False
 
-        build_result = self.__sendCommand("buildModel", self.modelName)
+        # build_result = self.__sendCommand("buildModel", self.modelName)
+        api = "buildModel(BouncingBall)"
+        build_result = self.getSession.sendExpression(api)
+        print(api+" : "+build_result[0]+" "+build_result[1])
         # check the error message
         if "error" in build_result:
             return build_result
@@ -121,10 +125,12 @@ class OMModule(object):
     def simulate(self):
         print("=====Start Simulation==================")
         print("======Write parameter in text file=====")
-        _overrideFile_Path = self.modelName + "_SimParameter.txt"
+        _overrideFile_Path = self.baseDir + "/" + self.modelName + "_SimParameter.txt"
+        print(_overrideFile_Path)
         _cmd_override = " -overrideFile=" + _overrideFile_Path
         f = open(_overrideFile_Path, "w")
-        # startTime, stopTime, stepSize and so on...
+        f.write("stopTime=10")
+        f.close()
 
         for _simOption in self.simOptions:
             f.write(_simOption[0] + "=" + _simOption[1] + "\n")
@@ -136,8 +142,8 @@ class OMModule(object):
 
         # sample data
         # cmd = "C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall.exe -overrideFile=C:/Users/test/デスクトップ/OMPython_testScript/BouncingBall_override.txt"
-        cmd = "C:/Users/test/デスクトップ/OMPython_testScript/" + self.modelName + ".exe" + _cmd_override
-
+        cmd = self.baseDir + "/" + self.modelName + ".exe" + _cmd_override
+        print(cmd)
         OMHome = os.path.join(os.environ.get("OPENMODELICAHOME"))
         dllPath = os.path.join(OMHome, "bin").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/cpp").replace("\\", "/") + os.pathsep + os.path.join(OMHome, "lib/omc/omsicpp").replace("\\", "/")
         my_env = os.environ.copy()
